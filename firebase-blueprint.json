@@ -1,0 +1,27 @@
+{
+  "$schema": "https://aistudio.google.com/schemas/firebase-blueprint.json",
+  "rulesVersion": "2",
+  "collections": [
+    {
+      "name": "projects",
+      "access": {
+        "read": "true",
+        "write": "request.auth != null"
+      }
+    },
+    {
+      "name": "skills",
+      "access": {
+        "read": "true",
+        "write": "request.auth != null"
+      }
+    },
+    {
+      "name": "profile",
+      "access": {
+        "read": "true",
+        "write": "request.auth != null"
+      }
+    }
+  ]
+}
