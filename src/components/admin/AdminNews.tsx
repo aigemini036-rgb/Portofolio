@@ -60,9 +60,9 @@ export default function AdminNews() {
 
       await refreshData();
       handleCancel();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Gagal menyimpan berita. Pastikan tabel news ada di Supabase.');
+      alert('Gagal menyimpan berita: ' + (error?.message || 'Error tidak diketahui'));
     } finally {
       setIsSaving(false);
     }

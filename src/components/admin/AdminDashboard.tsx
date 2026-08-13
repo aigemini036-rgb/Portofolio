@@ -72,9 +72,9 @@ export default function AdminDashboard() {
       if (error) throw error;
       await refreshData();
       setSaveMessage('Profil berhasil disimpan!');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setSaveMessage('Gagal menyimpan profil.');
+      setSaveMessage('Gagal menyimpan profil: ' + (err?.message || 'Error tidak diketahui'));
     } finally {
       setIsSaving(false);
       setTimeout(() => setSaveMessage(''), 4000);

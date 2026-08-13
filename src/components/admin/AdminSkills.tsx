@@ -48,9 +48,9 @@ export default function AdminSkills() {
 
       await refreshData();
       handleCancel();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Gagal menyimpan keahlian. Pastikan tabel skills ada di Supabase.');
+      alert('Gagal menyimpan keahlian: ' + (error?.message || 'Error tidak diketahui'));
     } finally {
       setIsSaving(false);
     }

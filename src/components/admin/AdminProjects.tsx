@@ -63,9 +63,9 @@ export default function AdminProjects() {
 
       await refreshData();
       handleCancel();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Gagal menyimpan proyek. Pastikan tabel projects memiliki struktur yang benar dan policies diizinkan.');
+      alert('Gagal menyimpan proyek: ' + (error?.message || 'Error tidak diketahui'));
     } finally {
       setIsSaving(false);
     }

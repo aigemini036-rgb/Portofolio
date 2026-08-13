@@ -48,7 +48,8 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const fetchData = async () => {
     try {
       // Fetch Profile
-      const { data: profileSnap, error: profileError } = await supabase.from('profile').select('*').eq('id', 'main').single();
+      const { data: profileSnap, error: profileError } = await supabase.from('profile').select('*').eq('id', 'main').maybeSingle();
+      if (profileError) console.error("Profile fetch error:", profileError.message);
       let profile = defaultProfile;
       if (!profileError && profileSnap) {
         profile = { ...defaultProfile, ...profileSnap };
@@ -56,6 +57,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
       // Fetch Skills
       const { data: skillsSnap, error: skillsError } = await supabase.from('skills').select('*').order('created_at', { ascending: true });
+      if (skillsError) console.error("Skills fetch error:", skillsError.message);
       let skills = defaultSkills;
       if (!skillsError && skillsSnap && skillsSnap.length > 0) {
         skills = skillsSnap;
@@ -63,6 +65,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
       // Fetch Projects
       const { data: projectsSnap, error: projectsError } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+      if (projectsError) console.error("Projects fetch error:", projectsError.message);
       let projects = defaultProjects;
       if (!projectsError && projectsSnap && projectsSnap.length > 0) {
         projects = projectsSnap;
@@ -70,6 +73,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
       // Fetch News
       const { data: newsSnap, error: newsError } = await supabase.from('news').select('*');
+      if (newsError) console.error("News fetch error:", newsError.message);
       let news: any[] = [];
       if (!newsError && newsSnap && newsSnap.length > 0) {
         news = newsSnap;
