@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, doc, getDocs, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
 import { skillsData as defaultSkills, projectsData as defaultProjects } from '../data';
 
 interface PortfolioData {
@@ -49,37 +48,32 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const fetchData = async () => {
     try {
       // Fetch Profile
-      const profileRef = doc(db, 'profile', 'main');
-      const profileSnap = await getDoc(profileRef);
+      const { data: profileSnap, error: profileError } = await supabase.from('profile').select('*').eq('id', 'main').single();
       let profile = defaultProfile;
-      
-      if (profileSnap.exists()) {
-        profile = { ...defaultProfile, ...profileSnap.data() } as any;
+      if (!profileError && profileSnap) {
+        profile = { ...defaultProfile, ...profileSnap };
       }
 
       // Fetch Skills
-      const skillsRef = collection(db, 'skills');
-      const skillsSnap = await getDocs(skillsRef);
+      const { data: skillsSnap, error: skillsError } = await supabase.from('skills').select('*').order('created_at', { ascending: true });
       let skills = defaultSkills;
-      if (!skillsSnap.empty) {
-        skills = skillsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      if (!skillsError && skillsSnap && skillsSnap.length > 0) {
+        skills = skillsSnap;
       }
 
       // Fetch Projects
-      const projectsRef = collection(db, 'projects');
-      const projectsSnap = await getDocs(projectsRef);
+      const { data: projectsSnap, error: projectsError } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
       let projects = defaultProjects;
-      if (!projectsSnap.empty) {
-        projects = projectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+      if (!projectsError && projectsSnap && projectsSnap.length > 0) {
+        projects = projectsSnap;
       }
 
       // Fetch News
-      const newsRef = collection(db, 'news');
-      const newsSnap = await getDocs(newsRef);
+      const { data: newsSnap, error: newsError } = await supabase.from('news').select('*');
       let news: any[] = [];
-      if (!newsSnap.empty) {
-        news = newsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
-        // Sort news by date descending if they have a date, else just leave it
+      if (!newsError && newsSnap && newsSnap.length > 0) {
+        news = newsSnap;
+        // Sort news by date descending if they have a date
         news.sort((a, b) => {
           const dateA = a.date ? new Date(a.date).getTime() : 0;
           const dateB = b.date ? new Date(b.date).getTime() : 0;

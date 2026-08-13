@@ -1,7 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../../firebase';
-import { doc, setDoc } from 'firebase/firestore';
 import { usePortfolio } from '../../context/PortfolioContext';
 import AdminSkills from './AdminSkills';
 import AdminProjects from './AdminProjects';
@@ -70,7 +68,8 @@ export default function AdminDashboard() {
     try {
       const rolesArray = rolesText.split(',').map(r => r.trim()).filter(r => r !== '');
       const newData = { ...profileData, roles: rolesArray };
-      await setDoc(doc(db, 'profile', 'main'), newData);
+      const { error } = await supabase.from('profile').upsert({ id: 'main', ...newData });
+      if (error) throw error;
       await refreshData();
       setSaveMessage('Profil berhasil disimpan!');
     } catch (err) {

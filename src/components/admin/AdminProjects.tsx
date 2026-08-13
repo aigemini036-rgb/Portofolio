@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { db } from '../../firebase';
-import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { usePortfolio } from '../../context/PortfolioContext';
 import ImageUpload from './ImageUpload';
+import { supabase } from '../../supabase';
 
 export default function AdminProjects() {
   const { projects, refreshData } = usePortfolio();
@@ -54,19 +53,19 @@ export default function AdminProjects() {
       const newData = { ...formData, tags: tagsArray };
       delete newData.id;
 
-      let docRef;
       if (editingId === 'new') {
-        docRef = doc(collection(db, 'projects'));
+        const { error } = await supabase.from('projects').insert([newData]);
+        if (error) throw error;
       } else {
-        docRef = doc(db, 'projects', editingId as string);
+        const { error } = await supabase.from('projects').update(newData).eq('id', editingId);
+        if (error) throw error;
       }
 
-      await setDoc(docRef, newData);
       await refreshData();
       handleCancel();
     } catch (error) {
       console.error(error);
-      alert('Gagal menyimpan proyek.');
+      alert('Gagal menyimpan proyek. Pastikan tabel projects memiliki struktur yang benar dan policies diizinkan.');
     } finally {
       setIsSaving(false);
     }
@@ -75,7 +74,8 @@ export default function AdminProjects() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Yakin ingin menghapus proyek ini?')) return;
     try {
-      await deleteDoc(doc(db, 'projects', id));
+      const { error } = await supabase.from('projects').delete().eq('id', id);
+      if (error) throw error;
       await refreshData();
     } catch (error) {
       console.error(error);

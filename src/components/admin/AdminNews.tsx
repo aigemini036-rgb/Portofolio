@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { db } from '../../firebase';
-import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { usePortfolio } from '../../context/PortfolioContext';
 import ImageUpload from './ImageUpload';
+import { supabase } from '../../supabase';
 
 export default function AdminNews() {
   const { news, refreshData } = usePortfolio();
@@ -51,19 +50,19 @@ export default function AdminNews() {
       const newData = { ...formData };
       delete newData.id;
 
-      let docRef;
       if (editingId === 'new') {
-        docRef = doc(collection(db, 'news'));
+        const { error } = await supabase.from('news').insert([newData]);
+        if (error) throw error;
       } else {
-        docRef = doc(db, 'news', editingId as string);
+        const { error } = await supabase.from('news').update(newData).eq('id', editingId);
+        if (error) throw error;
       }
 
-      await setDoc(docRef, newData);
       await refreshData();
       handleCancel();
     } catch (error) {
       console.error(error);
-      alert('Gagal menyimpan berita.');
+      alert('Gagal menyimpan berita. Pastikan tabel news ada di Supabase.');
     } finally {
       setIsSaving(false);
     }
@@ -72,7 +71,8 @@ export default function AdminNews() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Yakin ingin menghapus berita ini?')) return;
     try {
-      await deleteDoc(doc(db, 'news', id));
+      const { error } = await supabase.from('news').delete().eq('id', id);
+      if (error) throw error;
       await refreshData();
     } catch (error) {
       console.error(error);

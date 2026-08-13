@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { db } from '../../firebase';
-import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { usePortfolio } from '../../context/PortfolioContext';
+import { supabase } from '../../supabase';
 
 export default function AdminSkills() {
   const { skills, refreshData } = usePortfolio();
@@ -39,19 +38,19 @@ export default function AdminSkills() {
       const newData = { ...formData, items: itemsArray };
       delete newData.id;
 
-      let docRef;
       if (editingId === 'new') {
-        docRef = doc(collection(db, 'skills'));
+        const { error } = await supabase.from('skills').insert([newData]);
+        if (error) throw error;
       } else {
-        docRef = doc(db, 'skills', editingId as string);
+        const { error } = await supabase.from('skills').update(newData).eq('id', editingId);
+        if (error) throw error;
       }
 
-      await setDoc(docRef, newData);
       await refreshData();
       handleCancel();
     } catch (error) {
       console.error(error);
-      alert('Gagal menyimpan keahlian.');
+      alert('Gagal menyimpan keahlian. Pastikan tabel skills ada di Supabase.');
     } finally {
       setIsSaving(false);
     }
@@ -60,7 +59,8 @@ export default function AdminSkills() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Yakin ingin menghapus keahlian ini?')) return;
     try {
-      await deleteDoc(doc(db, 'skills', id));
+      const { error } = await supabase.from('skills').delete().eq('id', id);
+      if (error) throw error;
       await refreshData();
     } catch (error) {
       console.error(error);
