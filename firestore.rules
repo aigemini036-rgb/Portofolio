@@ -30,6 +30,13 @@ service cloud.firestore {
       allow update: if isAuthenticated() && isValidId(profileId) && isValidProfile(request.resource.data);
       allow delete: if isAuthenticated() && isValidId(profileId);
     }
+    
+    match /news/{newsId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidId(newsId) && isValidNews(request.resource.data);
+      allow update: if isAuthenticated() && isValidId(newsId) && isValidNews(request.resource.data);
+      allow delete: if isAuthenticated() && isValidId(newsId);
+    }
 
     function isValidProject(data) {
       return data.keys().hasAll(['title'])
@@ -47,6 +54,12 @@ service cloud.firestore {
       return data.keys().hasAll(['name'])
              && data.name is string
              && data.name.size() <= 256;
+    }
+    
+    function isValidNews(data) {
+      return data.keys().hasAll(['title'])
+             && data.title is string
+             && data.title.size() <= 256;
     }
   }
 }

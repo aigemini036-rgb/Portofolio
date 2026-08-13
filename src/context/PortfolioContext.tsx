@@ -7,6 +7,7 @@ interface PortfolioData {
   profile: any;
   skills: any[];
   projects: any[];
+  news: any[];
   loading: boolean;
   refreshData: () => Promise<void>;
 }
@@ -15,6 +16,7 @@ const PortfolioContext = createContext<PortfolioData>({
   profile: {},
   skills: [],
   projects: [],
+  news: [],
   loading: true,
   refreshData: async () => {}
 });
@@ -40,6 +42,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     profile: defaultProfile,
     skills: defaultSkills,
     projects: defaultProjects,
+    news: [],
     loading: true
   });
 
@@ -70,11 +73,26 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         projects = projectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
       }
 
+      // Fetch News
+      const newsRef = collection(db, 'news');
+      const newsSnap = await getDocs(newsRef);
+      let news: any[] = [];
+      if (!newsSnap.empty) {
+        news = newsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any;
+        // Sort news by date descending if they have a date, else just leave it
+        news.sort((a, b) => {
+          const dateA = a.date ? new Date(a.date).getTime() : 0;
+          const dateB = b.date ? new Date(b.date).getTime() : 0;
+          return dateB - dateA;
+        });
+      }
+
       setData(prev => ({
         ...prev,
         profile,
         skills,
         projects,
+        news,
         loading: false
       }));
 

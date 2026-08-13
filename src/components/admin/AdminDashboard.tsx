@@ -5,6 +5,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { usePortfolio } from '../../context/PortfolioContext';
 import AdminSkills from './AdminSkills';
 import AdminProjects from './AdminProjects';
+import AdminNews from './AdminNews';
+import ImageUpload from './ImageUpload';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -105,6 +107,12 @@ export default function AdminDashboard() {
           >
             Proyek
           </button>
+          <button 
+            onClick={() => setActiveTab('news')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'news' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Berita
+          </button>
         </div>
 
         {saveMessage && (
@@ -128,16 +136,12 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">URL Foto Profil</label>
-                <input
-                  type="url"
-                  value={profileData.profileImage || ''}
-                  onChange={(e) => setProfileData({...profileData, profileImage: e.target.value})}
-                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-all"
-                />
-                <p className="text-xs text-gray-500 mt-1">Gunakan URL gambar dari internet (URL berakhiran .jpg, .png, dsb) atau Google Drive link langsung.</p>
-              </div>
+              <ImageUpload
+                label="Foto Profil"
+                value={profileData.profileImage || ''}
+                onChange={(url) => setProfileData({...profileData, profileImage: url})}
+                helpText="URL gambar dari internet (Google Drive, dll) atau unggah langsung dari perangkat Anda."
+              />
               
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Peran (Pisahkan dengan koma)</label>
@@ -268,6 +272,10 @@ export default function AdminDashboard() {
 
         {activeTab === 'projects' && (
           <AdminProjects />
+        )}
+
+        {activeTab === 'news' && (
+          <AdminNews />
         )}
       </div>
     </div>
