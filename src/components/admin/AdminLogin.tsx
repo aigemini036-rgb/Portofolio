@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
+import { supabase } from '../../supabase';
 
 export default function AdminLogin() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,16 +15,22 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
     
-    // Simple mock authentication to bypass Firebase Auth issues
-    setTimeout(() => {
-      if (password === 'admin123') {
-        localStorage.setItem('admin_auth', 'true');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else if (data.session) {
         navigate('/admin');
-      } else {
-        setError('Password salah. (Gunakan: admin123)');
       }
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat login.');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -40,7 +48,7 @@ export default function AdminLogin() {
             Admin Panel
           </h2>
           <p className="text-gray-400 text-sm mt-2 text-center">
-            Masuk untuk mengelola konten portofolio Anda.
+            Masuk dengan akun Supabase Anda.
           </p>
         </div>
 
@@ -52,7 +60,18 @@ export default function AdminLogin() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Password (admin123)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              placeholder="admin@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
             <input
               type="password"
               value={password}

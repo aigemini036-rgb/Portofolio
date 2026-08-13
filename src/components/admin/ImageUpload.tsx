@@ -36,6 +36,9 @@ export default function ImageUpload({ value, onChange, label = "Gambar", helpTex
         .upload(filePath, file);
 
       if (uploadError) {
+        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('The resource was not found')) {
+          throw new Error("Bucket 'portfolio-images' belum dibuat di Supabase. Silakan buat bucket dengan nama tersebut dan atur menjadi Public.");
+        }
         throw uploadError;
       }
 

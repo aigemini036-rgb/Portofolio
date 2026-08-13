@@ -7,6 +7,7 @@ import AdminSkills from './AdminSkills';
 import AdminProjects from './AdminProjects';
 import AdminNews from './AdminNews';
 import ImageUpload from './ImageUpload';
+import { supabase } from '../../supabase';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -28,12 +29,26 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
-    const isAuth = localStorage.getItem('admin_auth');
-    if (!isAuth) {
-      navigate('/admin/login');
-    } else {
-      setLoading(false);
-    }
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/admin/login');
+      } else {
+        setLoading(false);
+      }
+    };
+    
+    checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate('/admin/login');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, [navigate]);
 
   useEffect(() => {
@@ -43,8 +58,8 @@ export default function AdminDashboard() {
     }
   }, [contextProfile]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_auth');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/');
   };
 
