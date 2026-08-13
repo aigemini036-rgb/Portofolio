@@ -131,7 +131,7 @@ export default function Hero() {
               <motion.div
                 className="inline-block whitespace-nowrap text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400 py-2"
                 animate={{ x: ["0%", "-50%"] }}
-                transition={{ ease: "linear", duration: 15, repeat: Infinity }}
+                transition={{ ease: "linear", duration: 30, repeat: Infinity }}
               >
                 {rolesText}{rolesText}{rolesText}{rolesText}
               </motion.div>
