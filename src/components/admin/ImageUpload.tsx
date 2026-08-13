@@ -19,13 +19,6 @@ export default function ImageUpload({ value, onChange, label = "Gambar", helpTex
     setUploading(true);
 
     try {
-      // Periksa apakah kredensial Supabase sudah ada
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        alert("Kredensial Supabase belum diatur. Silakan tambahkan VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di Secrets/Environment Variables.");
-        setUploading(false);
-        return;
-      }
-
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `uploads/${fileName}`;
