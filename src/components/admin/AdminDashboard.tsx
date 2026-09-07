@@ -4,10 +4,12 @@ import { usePortfolio } from '../../context/PortfolioContext';
 import AdminSkills from './AdminSkills';
 import AdminProjects from './AdminProjects';
 import AdminNews from './AdminNews';
+import AdminSecurity from './AdminSecurity';
 import ImageUpload from './ImageUpload';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { isSessionValid, endAdminSession } from '../../lib/authSecurity';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -29,15 +31,14 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
-    const isOffline = localStorage.getItem('admin_offline_session') === 'true';
-    if (isOffline) {
+    // If admin has a valid session, let them in
+    if (isSessionValid()) {
       setLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      const stillOffline = localStorage.getItem('admin_offline_session') === 'true';
-      if (!user && !stillOffline) {
+      if (!user && !isSessionValid()) {
         navigate('/admin/login');
       } else {
         setLoading(false);
@@ -57,9 +58,9 @@ export default function AdminDashboard() {
   }, [contextProfile]);
 
   const handleLogout = async () => {
-    localStorage.removeItem('admin_offline_session');
+    endAdminSession();
     await signOut(auth).catch(() => {});
-    navigate('/');
+    navigate('/admin/login');
   };
 
   const handleSaveProfile = async (e: FormEvent<HTMLFormElement>) => {
@@ -165,6 +166,12 @@ export default function AdminDashboard() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'news' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
           >
             Berita
+          </button>
+          <button 
+            onClick={() => setActiveTab('security')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'security' ? 'bg-amber-500 text-gray-950 font-bold' : 'text-gray-400 hover:text-white'}`}
+          >
+            Keamanan & Sandi
           </button>
         </div>
 
@@ -329,6 +336,10 @@ export default function AdminDashboard() {
 
         {activeTab === 'news' && (
           <AdminNews />
+        )}
+
+        {activeTab === 'security' && (
+          <AdminSecurity />
         )}
       </div>
     </div>
