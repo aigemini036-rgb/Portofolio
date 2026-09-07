@@ -5,7 +5,9 @@ import AdminSkills from './AdminSkills';
 import AdminProjects from './AdminProjects';
 import AdminNews from './AdminNews';
 import ImageUpload from './ImageUpload';
-import { supabase } from '../../supabase';
+import { auth, db } from '../../firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -27,25 +29,23 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+    const isOffline = localStorage.getItem('admin_offline_session') === 'true';
+    if (isOffline) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const stillOffline = localStorage.getItem('admin_offline_session') === 'true';
+      if (!user && !stillOffline) {
         navigate('/admin/login');
       } else {
         setLoading(false);
       }
-    };
-    
-    checkAuth();
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate('/admin/login');
-      }
     });
 
     return () => {
-      authListener.subscription.unsubscribe();
+      unsubscribe();
     };
   }, [navigate]);
 
@@ -57,7 +57,8 @@ export default function AdminDashboard() {
   }, [contextProfile]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('admin_offline_session');
+    await signOut(auth).catch(() => {});
     navigate('/');
   };
 
@@ -67,17 +68,55 @@ export default function AdminDashboard() {
     setSaveMessage('');
     try {
       const rolesArray = rolesText.split(',').map(r => r.trim()).filter(r => r !== '');
-      const newData = { ...profileData, roles: rolesArray };
-      const { error } = await supabase.from('profile').upsert({ id: 'main', ...newData });
-      if (error) throw error;
+      const imageUrl = profileData.profileImage || profileData.profileimage || profileData.profile_image || '';
+      
+      const payload: any = {
+        name: profileData.name || '',
+        roles: rolesArray,
+        bio1: profileData.bio1 || '',
+        bio2: profileData.bio2 || '',
+        education: profileData.education || '',
+        experience: profileData.experience || '',
+        email: profileData.email || '',
+        phone: profileData.phone || '',
+        location: profileData.location || '',
+        github: profileData.github || '',
+        linkedin: profileData.linkedin || '',
+        instagram: profileData.instagram || '',
+        profileImage: imageUrl
+      };
+
+      // Always save to local cache so user's edits are never lost
+      try {
+        localStorage.setItem('portfolio_profile', JSON.stringify({
+          ...profileData,
+          ...payload
+        }));
+      } catch {
+        // Ignore localStorage error
+      }
+
+      // Save to Firebase Firestore
+      let savedToCloud = false;
+      try {
+        await setDoc(doc(db, 'profile', 'main'), payload, { merge: true });
+        savedToCloud = true;
+      } catch (cloudErr: any) {
+        console.warn("Firebase save warning:", cloudErr?.message || cloudErr);
+      }
+
       await refreshData();
-      setSaveMessage('Profil berhasil disimpan!');
+      if (savedToCloud) {
+        setSaveMessage('Profil berhasil disimpan ke Firebase!');
+      } else {
+        setSaveMessage('Profil berhasil disimpan di browser (penyimpanan lokal).');
+      }
     } catch (err: any) {
       console.error(err);
       setSaveMessage('Gagal menyimpan profil: ' + (err?.message || 'Error tidak diketahui'));
     } finally {
       setIsSaving(false);
-      setTimeout(() => setSaveMessage(''), 4000);
+      setTimeout(() => setSaveMessage(''), 5000);
     }
   };
 

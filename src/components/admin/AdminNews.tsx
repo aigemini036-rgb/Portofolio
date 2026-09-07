@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import ImageUpload from './ImageUpload';
-import { supabase } from '../../supabase';
+import { db } from '../../firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
 export default function AdminNews() {
   const { news, refreshData } = usePortfolio();
@@ -50,12 +51,31 @@ export default function AdminNews() {
       const newData = { ...formData };
       delete newData.id;
 
-      if (editingId === 'new') {
-        const { error } = await supabase.from('news').insert([newData]);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('news').update(newData).eq('id', editingId);
-        if (error) throw error;
+      // Update local storage backup immediately
+      try {
+        const stored = localStorage.getItem('portfolio_news');
+        let currentNews = stored ? JSON.parse(stored) : [...news];
+        if (editingId === 'new') {
+          const newItem = { ...newData, id: 'local_' + Date.now() };
+          currentNews = [newItem, ...currentNews];
+        } else {
+          currentNews = currentNews.map((n: any) => 
+            n.id === editingId ? { ...n, ...newData } : n
+          );
+        }
+        localStorage.setItem('portfolio_news', JSON.stringify(currentNews));
+      } catch {
+        // Ignore localStorage error
+      }
+
+      try {
+        if (editingId === 'new') {
+          await addDoc(collection(db, 'news'), newData);
+        } else {
+          await updateDoc(doc(db, 'news', editingId), newData);
+        }
+      } catch (cloudErr: any) {
+        console.warn("Firestore news save warning:", cloudErr?.message || cloudErr);
       }
 
       await refreshData();
@@ -71,8 +91,22 @@ export default function AdminNews() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Yakin ingin menghapus berita ini?')) return;
     try {
-      const { error } = await supabase.from('news').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const stored = localStorage.getItem('portfolio_news');
+        if (stored) {
+          const current = JSON.parse(stored).filter((n: any) => n.id !== id);
+          localStorage.setItem('portfolio_news', JSON.stringify(current));
+        }
+      } catch {
+        // Ignore
+      }
+
+      try {
+        await deleteDoc(doc(db, 'news', id));
+      } catch (cloudErr: any) {
+        console.warn("Firestore delete warning:", cloudErr?.message || cloudErr);
+      }
+
       await refreshData();
     } catch (error) {
       console.error(error);

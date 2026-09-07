@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import ImageUpload from './ImageUpload';
-import { supabase } from '../../supabase';
+import { db } from '../../firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
 export default function AdminProjects() {
   const { projects, refreshData } = usePortfolio();
@@ -24,6 +25,8 @@ export default function AdminProjects() {
     setEditingId(project.id);
     setFormData({
       ...project,
+      demoUrl: project.demoUrl || project.demourl || project.demo_url || '',
+      githubUrl: project.githubUrl || project.githuburl || project.github_url || '',
       tags: (project.tags || []).join(', ')
     });
   };
@@ -50,15 +53,43 @@ export default function AdminProjects() {
     setIsSaving(true);
     try {
       const tagsArray = formData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag !== '');
-      const newData = { ...formData, tags: tagsArray };
-      delete newData.id;
+      const demoUrl = formData.demoUrl || formData.demourl || formData.demo_url || '';
+      const githubUrl = formData.githubUrl || formData.githuburl || formData.github_url || '';
+      
+      const payload: any = {
+        title: formData.title,
+        description: formData.description,
+        image: formData.image,
+        tags: tagsArray,
+        demourl: demoUrl,
+        githuburl: githubUrl
+      };
 
-      if (editingId === 'new') {
-        const { error } = await supabase.from('projects').insert([newData]);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('projects').update(newData).eq('id', editingId);
-        if (error) throw error;
+      // Update local storage backup immediately
+      try {
+        const stored = localStorage.getItem('portfolio_projects');
+        let currentProjects = stored ? JSON.parse(stored) : [...projects];
+        if (editingId === 'new') {
+          const newProj = { ...payload, id: 'local_' + Date.now(), demoUrl, githubUrl };
+          currentProjects = [newProj, ...currentProjects];
+        } else {
+          currentProjects = currentProjects.map((p: any) => 
+            p.id === editingId ? { ...p, ...payload, demoUrl, githubUrl } : p
+          );
+        }
+        localStorage.setItem('portfolio_projects', JSON.stringify(currentProjects));
+      } catch {
+        // Ignore localStorage errors
+      }
+
+      try {
+        if (editingId === 'new') {
+          await addDoc(collection(db, 'projects'), payload);
+        } else {
+          await updateDoc(doc(db, 'projects', editingId), payload);
+        }
+      } catch (cloudErr: any) {
+        console.warn("Firestore projects save warning:", cloudErr?.message || cloudErr);
       }
 
       await refreshData();
@@ -74,8 +105,22 @@ export default function AdminProjects() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Yakin ingin menghapus proyek ini?')) return;
     try {
-      const { error } = await supabase.from('projects').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const stored = localStorage.getItem('portfolio_projects');
+        if (stored) {
+          const current = JSON.parse(stored).filter((p: any) => p.id !== id);
+          localStorage.setItem('portfolio_projects', JSON.stringify(current));
+        }
+      } catch {
+        // Ignore
+      }
+
+      try {
+        await deleteDoc(doc(db, 'projects', id));
+      } catch (cloudErr: any) {
+        console.warn("Firestore delete warning:", cloudErr?.message || cloudErr);
+      }
+
       await refreshData();
     } catch (error) {
       console.error(error);

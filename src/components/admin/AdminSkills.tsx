@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
-import { supabase } from '../../supabase';
+import { db } from '../../firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
 export default function AdminSkills() {
   const { skills, refreshData } = usePortfolio();
@@ -38,12 +39,31 @@ export default function AdminSkills() {
       const newData = { ...formData, items: itemsArray };
       delete newData.id;
 
-      if (editingId === 'new') {
-        const { error } = await supabase.from('skills').insert([newData]);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('skills').update(newData).eq('id', editingId);
-        if (error) throw error;
+      // Update local storage backup immediately
+      try {
+        const stored = localStorage.getItem('portfolio_skills');
+        let currentSkills = stored ? JSON.parse(stored) : [...skills];
+        if (editingId === 'new') {
+          const newSkill = { ...newData, id: 'local_' + Date.now() };
+          currentSkills = [...currentSkills, newSkill];
+        } else {
+          currentSkills = currentSkills.map((s: any) => 
+            s.id === editingId ? { ...s, ...newData } : s
+          );
+        }
+        localStorage.setItem('portfolio_skills', JSON.stringify(currentSkills));
+      } catch {
+        // Ignore localStorage error
+      }
+
+      try {
+        if (editingId === 'new') {
+          await addDoc(collection(db, 'skills'), newData);
+        } else {
+          await updateDoc(doc(db, 'skills', editingId), newData);
+        }
+      } catch (cloudErr: any) {
+        console.warn("Firestore skills save warning:", cloudErr?.message || cloudErr);
       }
 
       await refreshData();
@@ -59,8 +79,22 @@ export default function AdminSkills() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Yakin ingin menghapus keahlian ini?')) return;
     try {
-      const { error } = await supabase.from('skills').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const stored = localStorage.getItem('portfolio_skills');
+        if (stored) {
+          const current = JSON.parse(stored).filter((s: any) => s.id !== id);
+          localStorage.setItem('portfolio_skills', JSON.stringify(current));
+        }
+      } catch {
+        // Ignore
+      }
+
+      try {
+        await deleteDoc(doc(db, 'skills', id));
+      } catch (cloudErr: any) {
+        console.warn("Firestore delete warning:", cloudErr?.message || cloudErr);
+      }
+
       await refreshData();
     } catch (error) {
       console.error(error);

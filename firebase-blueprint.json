@@ -1,27 +1,83 @@
 {
-  "$schema": "https://aistudio.google.com/schemas/firebase-blueprint.json",
-  "rulesVersion": "2",
-  "collections": [
-    {
-      "name": "projects",
-      "access": {
-        "read": "true",
-        "write": "request.auth != null"
-      }
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "Portfolio project item",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "tags": { "type": "array" },
+        "demoUrl": { "type": "string" },
+        "githubUrl": { "type": "string" }
+      },
+      "required": ["title"]
     },
-    {
-      "name": "skills",
-      "access": {
-        "read": "true",
-        "write": "request.auth != null"
-      }
+    "Skill": {
+      "title": "Skill",
+      "description": "Portfolio skill category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "items": { "type": "array" }
+      },
+      "required": ["name"]
     },
-    {
-      "name": "profile",
-      "access": {
-        "read": "true",
-        "write": "request.auth != null"
-      }
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "roles": { "type": "array" },
+        "bio1": { "type": "string" },
+        "bio2": { "type": "string" },
+        "education": { "type": "string" },
+        "experience": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "github": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "instagram": { "type": "string" },
+        "profileImage": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "News": {
+      "title": "News",
+      "description": "Portfolio news or article item",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "readTime": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["title"]
     }
-  ]
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Collection of projects"
+    },
+    "/skills/{skillId}": {
+      "schema": "Skill",
+      "description": "Collection of skills"
+    },
+    "/profile/{profileId}": {
+      "schema": "Profile",
+      "description": "Profile document"
+    },
+    "/news/{newsId}": {
+      "schema": "News",
+      "description": "Collection of news items"
+    }
+  }
 }
