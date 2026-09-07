@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { db, OperationType, handleFirestoreError } from '../firebase';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+import { doc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { skillsData as defaultSkills, projectsData as defaultProjects } from '../data';
 
 interface PortfolioData {
@@ -10,6 +10,9 @@ interface PortfolioData {
   news: any[];
   loading: boolean;
   refreshData: () => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  deleteSkill: (id: string) => Promise<void>;
+  deleteNews: (id: string) => Promise<void>;
 }
 
 const PortfolioContext = createContext<PortfolioData>({
@@ -18,7 +21,10 @@ const PortfolioContext = createContext<PortfolioData>({
   projects: [],
   news: [],
   loading: true,
-  refreshData: async () => {}
+  refreshData: async () => {},
+  deleteProject: async () => {},
+  deleteSkill: async () => {},
+  deleteNews: async () => {}
 });
 
 const defaultProfile = {
@@ -165,12 +171,72 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteProject = async (id: string) => {
+    setData(prev => {
+      const updated = prev.projects.filter(p => p.id !== id);
+      try {
+        localStorage.setItem('portfolio_projects', JSON.stringify(updated));
+      } catch (e) {
+        console.warn(e);
+      }
+      return { ...prev, projects: updated };
+    });
+
+    try {
+      await deleteDoc(doc(db, 'projects', id));
+    } catch (err: any) {
+      console.warn("Firestore delete project warning:", err?.message || err);
+    }
+  };
+
+  const deleteSkill = async (id: string) => {
+    setData(prev => {
+      const updated = prev.skills.filter(s => s.id !== id);
+      try {
+        localStorage.setItem('portfolio_skills', JSON.stringify(updated));
+      } catch (e) {
+        console.warn(e);
+      }
+      return { ...prev, skills: updated };
+    });
+
+    try {
+      await deleteDoc(doc(db, 'skills', id));
+    } catch (err: any) {
+      console.warn("Firestore delete skill warning:", err?.message || err);
+    }
+  };
+
+  const deleteNews = async (id: string) => {
+    setData(prev => {
+      const updated = prev.news.filter(n => n.id !== id);
+      try {
+        localStorage.setItem('portfolio_news', JSON.stringify(updated));
+      } catch (e) {
+        console.warn(e);
+      }
+      return { ...prev, news: updated };
+    });
+
+    try {
+      await deleteDoc(doc(db, 'news', id));
+    } catch (err: any) {
+      console.warn("Firestore delete news warning:", err?.message || err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
 
   return (
-    <PortfolioContext.Provider value={{ ...data, refreshData: fetchData }}>
+    <PortfolioContext.Provider value={{ 
+      ...data, 
+      refreshData: fetchData,
+      deleteProject,
+      deleteSkill,
+      deleteNews
+    }}>
       {children}
     </PortfolioContext.Provider>
   );

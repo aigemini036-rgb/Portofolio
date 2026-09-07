@@ -5,10 +5,11 @@ import { db } from '../../firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
 export default function AdminProjects() {
-  const { projects, refreshData } = usePortfolio();
+  const { projects, refreshData, deleteProject } = usePortfolio();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Helper function to convert Google Drive share links to direct image links
   const getDirectImageUrl = (url: string | undefined) => {
@@ -103,28 +104,10 @@ export default function AdminProjects() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Yakin ingin menghapus proyek ini?')) return;
     try {
-      try {
-        const stored = localStorage.getItem('portfolio_projects');
-        if (stored) {
-          const current = JSON.parse(stored).filter((p: any) => p.id !== id);
-          localStorage.setItem('portfolio_projects', JSON.stringify(current));
-        }
-      } catch {
-        // Ignore
-      }
-
-      try {
-        await deleteDoc(doc(db, 'projects', id));
-      } catch (cloudErr: any) {
-        console.warn("Firestore delete warning:", cloudErr?.message || cloudErr);
-      }
-
-      await refreshData();
+      await deleteProject(id);
     } catch (error) {
-      console.error(error);
-      alert('Gagal menghapus proyek.');
+      console.error('Gagal menghapus proyek:', error);
     }
   };
 
@@ -250,7 +233,7 @@ export default function AdminProjects() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(p.id)}
+                  onClick={() => setDeleteConfirmId(p.id)}
                   className="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs transition-colors"
                 >
                   Hapus
@@ -263,6 +246,41 @@ export default function AdminProjects() {
           <p className="text-gray-500 text-center py-4 col-span-full">Belum ada data proyek.</p>
         )}
       </div>
+
+      {/* In-App Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Hapus Proyek?</h3>
+            <p className="text-sm text-gray-400 mb-6">Apakah Anda yakin ingin menghapus proyek ini dari portofolio?</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const id = deleteConfirmId;
+                  setDeleteConfirmId(null);
+                  await handleDelete(id);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-medium transition-colors"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
