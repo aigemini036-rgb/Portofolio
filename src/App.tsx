@@ -12,15 +12,17 @@ import Projects from './components/Projects';
 import News from './components/News';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import BackgroundAnimation from './components/BackgroundAnimation';
 import AdminLogin from './components/admin/AdminLogin';
 import AdminDashboard from './components/admin/AdminDashboard';
 import { PortfolioProvider } from './context/PortfolioContext';
 
 function MainPortfolio() {
   return (
-    <div className="font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200 relative">
+    <div className="font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200 relative bg-gray-950 min-h-screen">
+      <BackgroundAnimation />
       <Navbar />
-      <main>
+      <main className="relative z-10">
         <Hero />
         <About />
         <Skills />

@@ -3,26 +3,12 @@ import { ArrowRight, Terminal } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
 
-const floatingSymbols = ['</>', '{}', '[]', '()', '=>', ';', '&&', '||', '!=', '0101'];
-
 export default function Hero() {
   const { profile, loading } = usePortfolio();
   const [codeText, setCodeText] = useState("");
   const [cursorVisible, setCursorVisible] = useState(true);
   const [showTerminal, setShowTerminal] = useState(false);
   const [terminalLines, setTerminalLines] = useState<number>(0);
-
-  const bgSymbols = useMemo(() => {
-    return Array.from({ length: 15 }).map((_, i) => ({
-      id: i,
-      symbol: floatingSymbols[Math.floor(Math.random() * floatingSymbols.length)],
-      x: Math.random() * 100,
-      delay: Math.random() * 10,
-      duration: Math.random() * 15 + 15,
-      rotStart: Math.random() * 360,
-      rotEnd: Math.random() * 360 + 180
-    }));
-  }, []);
 
   const codeSnippet = useMemo(() => {
     return `const developer = {
@@ -94,24 +80,23 @@ export default function Hero() {
 
   return (
     <section id="home" className="min-h-screen flex items-center justify-center pt-20 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-3xl -z-10" />
-
-      {/* Floating Background Symbols */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        {bgSymbols.map((item) => (
-          <motion.div
-            key={item.id}
-            className="absolute text-indigo-500/10 font-mono text-3xl md:text-5xl font-bold whitespace-nowrap"
-            initial={{ y: '110vh', x: `${item.x}vw`, opacity: 0, rotate: item.rotStart }}
-            animate={{ y: '-10vh', opacity: [0, 1, 1, 0], rotate: item.rotEnd }}
-            transition={{ duration: item.duration, repeat: Infinity, delay: item.delay, ease: "linear" }}
-          >
-            {item.symbol}
-          </motion.div>
-        ))}
-      </div>
+      {/* Hero Ambient Glow Lights */}
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.2, 1],
+          opacity: [0.35, 0.55, 0.35]
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/4 left-1/4 w-[420px] h-[420px] bg-gradient-to-br from-indigo-600/40 via-cyan-500/30 to-transparent rounded-full blur-[100px] -z-10 pointer-events-none" 
+      />
+      <motion.div 
+        animate={{ 
+          scale: [1.1, 0.9, 1.1],
+          opacity: [0.3, 0.5, 0.3]
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute bottom-1/4 right-1/4 w-[420px] h-[420px] bg-gradient-to-tl from-fuchsia-600/35 via-indigo-600/30 to-transparent rounded-full blur-[100px] -z-10 pointer-events-none" 
+      />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
         <motion.div
