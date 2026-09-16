@@ -200,7 +200,8 @@ export default function AdminDashboard() {
                 label="Foto Profil"
                 value={profileData.profileImage || ''}
                 onChange={(url) => setProfileData({...profileData, profileImage: url})}
-                helpText="URL gambar dari internet (Google Drive, dll) atau unggah langsung dari perangkat Anda."
+                defaultAspect={4 / 3}
+                helpText="Unggah atau potong (crop) foto agar pas dan simetris di bagian Tentang Saya. Anda dapat menggeser posisi, zoom, dan memutar foto."
               />
               
               <div>

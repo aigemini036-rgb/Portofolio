@@ -39,13 +39,13 @@ export default function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="rounded-2xl overflow-hidden relative group"
+            className="rounded-2xl overflow-hidden relative group shadow-2xl border border-gray-800/80 bg-gray-900/50"
           >
-            <div className="absolute inset-0 bg-indigo-600/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
+            <div className="absolute inset-0 bg-indigo-600/10 group-hover:bg-transparent transition-colors duration-500 z-10 pointer-events-none" />
             <img
               src={getDirectImageUrl(profile?.profileImage)}
               alt="Profile/Workspace"
-              className="w-full h-[400px] object-cover transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-[400px] sm:h-[440px] object-cover object-center transition-transform duration-700 group-hover:scale-105"
             />
           </motion.div>
 
